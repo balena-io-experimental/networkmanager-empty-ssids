@@ -58,24 +58,6 @@ def request_scan(bus, device):
 
     print("WiFi scan requested")
 
-def send_logs():
-    print("Pulling and sending logs")
-
-    os.chdir("/tmp/")
-
-    os.system("journalctl -b  -u NetworkManager -u wpa_supplicant > network-logs.txt")
-
-    os.system("tar -czf network-logs.tar.gz network-logs.txt")
-
-    location = os.popen('curl -s -H "Max-Days: 7" --upload-file ./network-logs.tar.gz https://transfer.sh/network-logs.tar.gz').read()
-
-    os.remove("network-logs.txt")
-
-    os.remove("network-logs.tar.gz")
-
-    print(location)
-
-
 def main():
     interface = get_interface()
 
@@ -101,12 +83,10 @@ def main():
 
             if count != 0:
                 print("Scanning did NOT work")
-
-                send_logs()
-
-                break
             else:
                 print("Scanning WORKED!!!")
+
+            break
 
         print("Sleeping 30 seconds...")
         time.sleep(30)
