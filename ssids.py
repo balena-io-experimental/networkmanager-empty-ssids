@@ -12,14 +12,15 @@ def set_nm_log_level(bus, level):
 
     print("NetworkManager log level set to", level)    
 
-def set_wpa_log_level(bus, level):
-    proxy = bus.get_object("fi.w1.wpa_supplicant1", "/fi/w1/wpa_supplicant1")
-    properties = dbus.Interface(proxy, "org.freedesktop.DBus.Properties")
-
+def set_wpa_log_level(level):
     if level == "msgdump":
-        properties.Set("fi.w1.wpa_supplicant1", "DebugTimestamp", True)
+        os.system('dbus-send --system --dest=fi.w1.wpa_supplicant1 ' \
+            '/fi/w1/wpa_supplicant1 org.freedesktop.DBus.Properties.Set ' \
+            'string:fi.w1.wpa_supplicant1 string:DebugTimestamp variant:boolean:true')
 
-    properties.Set("fi.w1.wpa_supplicant1", "DebugLevel", level)
+    os.system('dbus-send --system --dest=fi.w1.wpa_supplicant1 ' \
+        '/fi/w1/wpa_supplicant1 org.freedesktop.DBus.Properties.Set ' \
+        'string:fi.w1.wpa_supplicant1 string:DebugLevel variant:string:"{}"'.format(level))
 
     print("wpa_supplicant log level set to", level)
 
@@ -81,7 +82,7 @@ def main():
     bus = dbus.SystemBus()
 
     set_nm_log_level(bus, "debug")
-    set_wpa_log_level(bus, "msgdump")
+    set_wpa_log_level("msgdump")
 
     while True:
         device = get_device(bus, interface)
@@ -111,7 +112,7 @@ def main():
         time.sleep(30)
 
     set_nm_log_level(bus, "info")
-    set_wpa_log_level(bus, "info")
+    set_wpa_log_level("info")
 
     print("Exiting...")
 
