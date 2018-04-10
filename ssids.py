@@ -70,7 +70,7 @@ def main():
         device = get_device(bus, interface)
         count = get_access_point_count(bus, device)
 
-        if count != 0:
+        if count == 0:
             print("No access points available")
 
             request_scan(bus, device)
@@ -81,7 +81,7 @@ def main():
 
             count = get_access_point_count(bus, device)
 
-            if count != 0:
+            if count == 0:
                 print("Scanning did NOT work")
             else:
                 print("Scanning WORKED!!!")
