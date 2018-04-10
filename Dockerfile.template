@@ -3,7 +3,7 @@ FROM resin/%%RESIN_MACHINE_NAME%%-debian:stretch
 ENV INITSYSTEM on
 
 RUN apt-get update \
-    && apt-get install -y dbus python-dbus \
+    && apt-get install -y dbus python3-dbus \
     && systemctl mask dbus.service \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -14,4 +14,4 @@ COPY ssids.py .
 
 ENV DBUS_SYSTEM_BUS_ADDRESS unix:path=/host/run/dbus/system_bus_socket
 
-CMD ["python", "ssids.py"]
+CMD ["python3", "ssids.py"]
