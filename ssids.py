@@ -8,7 +8,7 @@ import dbus
 def set_nm_log_level(bus, level):
     proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
     nm = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
-    nm.SetLogging(level, "")
+    nm.SetLogging(level, "all")
 
     print("NetworkManager log level set to", level)    
 
@@ -63,15 +63,28 @@ def main():
 
     bus = dbus.SystemBus()
 
-    set_nm_log_level(bus, "debug")
+    set_nm_log_level(bus, "trace")
     set_wpa_log_level("msgdump")
 
+    zero_times = 0
+
     while True:
+        print("Sleeping 30 seconds...")
+
+        try:
+            time.sleep(30)
+        except KeyboardInterrupt:
+            break
+
         device = get_device(bus, interface)
         count = get_access_point_count(bus, device)
 
         if count == 0:
             print("No access points available")
+
+            zero_times += 1
+            if zero_times < 4:
+                continue
 
             request_scan(bus, device)
 
@@ -87,9 +100,8 @@ def main():
                 print("Scanning WORKED!!!")
 
             break
-
-        print("Sleeping 30 seconds...")
-        time.sleep(30)
+        else:
+            zero_times = 0
 
     set_nm_log_level(bus, "info")
     set_wpa_log_level("info")
