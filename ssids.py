@@ -3,12 +3,12 @@ import sys
 import time
 import os
 
-import dbus
+import gi
+gi.require_version('NM', '1.0')
+from gi.repository import NM
 
-def set_nm_log_level(bus, level):
-    proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
-    nm = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
-    nm.SetLogging(level, "all")
+def set_nm_log_level(nmc, level):
+    nmc.set_logging(level, "all")
 
     print("NetworkManager log level set to", level)    
 
@@ -33,66 +33,65 @@ def get_interface():
     print("Target interface:", interface)
     return interface
 
-def get_device(bus, interface):
-    proxy = bus.get_object("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager")
-    nm = dbus.Interface(proxy, "org.freedesktop.NetworkManager")
-    device = nm.GetDeviceByIpIface(interface)
-
+def get_device(nmc, interface):
+    device = nmc.get_device_by_iface(interface)
     print("Device path:", device)
+
+    if device is None:
+        sys.exit("Interface not found: {}".format(interface))
 
     return device
 
-def get_access_point_count(bus, device):
-    proxy = bus.get_object("org.freedesktop.NetworkManager", device)
-    wireless = dbus.Interface(proxy, "org.freedesktop.NetworkManager.Device.Wireless")
-    count = len(wireless.GetAllAccessPoints())
+def get_access_point_count(device):
+    count = len(device.get_access_points())
 
     print("Access point count:", count)
 
     return count
 
-def request_scan(bus, device):
-    proxy = bus.get_object("org.freedesktop.NetworkManager", device)
-    wireless = dbus.Interface(proxy, "org.freedesktop.NetworkManager.Device.Wireless")
-    wireless.RequestScan([])
+def request_scan(device):
+    device.request_scan()
 
     print("WiFi scan requested")
 
 def main():
     interface = get_interface()
 
-    bus = dbus.SystemBus()
+    nmc = NM.Client.new(None)
 
-    set_nm_log_level(bus, "trace")
+    set_nm_log_level(nmc, "trace")
     set_wpa_log_level("msgdump")
 
     zero_times = 0
 
+    device = get_device(nmc, interface)
+
     while True:
-        print("Sleeping 30 seconds...")
+        print("Sleeping 5 seconds...")
 
         try:
-            time.sleep(30)
+            time.sleep(5)
         except KeyboardInterrupt:
             break
 
-        device = get_device(bus, interface)
-        count = get_access_point_count(bus, device)
+        count = get_access_point_count(device)
+        count = 0
 
         if count == 0:
             print("No access points available")
 
             zero_times += 1
-            if zero_times < 4:
+            if zero_times < 3:
                 continue
 
-            request_scan(bus, device)
+            request_scan(device)
 
             print("Waiting for 10 seconds...")
 
             time.sleep(10)
 
-            count = get_access_point_count(bus, device)
+            count = get_access_point_count(device)
+            count = 0
 
             if count == 0:
                 print("Scanning did NOT work")
@@ -103,7 +102,7 @@ def main():
         else:
             zero_times = 0
 
-    set_nm_log_level(bus, "info")
+    set_nm_log_level(nmc, "info")
     set_wpa_log_level("info")
 
     print("Exiting...")
