@@ -7,25 +7,22 @@ import gi
 gi.require_version('NM', '1.0')
 from gi.repository import NM
 
-from pydbus import SystemBus
-
-WPAS_BUS_NAME = 'fi.w1.wpa_supplicant1'
-
-def set_wpa_log_level(level):
-    bus = SystemBus()
-    ws = bus.get('fi.w1.wpa_supplicant1', '/fi/w1/wpa_supplicant1')
-
-    if level == "msgdump":
-        ws.DebugTimestamp = True
-
-    ws.DebugLevel = level
-
-    print("wpa_supplicant log level set to", level)
-
 def set_nm_log_level(nmc, level):
     nmc.set_logging(level, "all")
 
     print("NetworkManager log level set to", level)    
+
+def set_wpa_log_level(level):
+    if level == "msgdump":
+        os.system('dbus-send --system --dest=fi.w1.wpa_supplicant1 ' \
+            '/fi/w1/wpa_supplicant1 org.freedesktop.DBus.Properties.Set ' \
+            'string:fi.w1.wpa_supplicant1 string:DebugTimestamp variant:boolean:true')
+
+    os.system('dbus-send --system --dest=fi.w1.wpa_supplicant1 ' \
+        '/fi/w1/wpa_supplicant1 org.freedesktop.DBus.Properties.Set ' \
+        'string:fi.w1.wpa_supplicant1 string:DebugLevel variant:string:"{}"'.format(level))
+
+    print("wpa_supplicant log level set to", level)
 
 def get_interface():
     if len(sys.argv) < 2:
@@ -105,7 +102,7 @@ def main():
 
         count = get_access_point_count(device)
 
-        if count == 1:
+        if count == 0:
             print("No access points available")
 
             zero_times += 1
@@ -120,7 +117,7 @@ def main():
 
             count = get_access_point_count(device)
 
-            if count == 1:
+            if count == 0:
                 print("Scanning did NOT work")
             else:
                 print("Scanning WORKED!!!")
