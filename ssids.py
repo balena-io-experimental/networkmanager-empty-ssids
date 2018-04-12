@@ -62,8 +62,6 @@ def get_device(nmc, interface):
     if device is None:
         sys.exit("Interface not found: {}".format(interface))
 
-    print_device_info(device)
-
     return device
 
 def get_access_point_count(device):
@@ -125,8 +123,12 @@ def main():
 
     device = get_device(nmc, interface)
 
+    print_device_info(device)
+
     while True:
         wait(nmc, 10)
+
+        device = get_device(nmc, interface)
 
         print_ap_info(device)
 
