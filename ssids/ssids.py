@@ -126,6 +126,8 @@ def main():
     print_device_info(device)
 
     while True:
+        nmc = NM.Client.new(None)
+
         wait(nmc, 10)
 
         device = get_device(nmc, interface)
