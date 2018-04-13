@@ -147,7 +147,7 @@ def main():
 
         request_scan(device)
 
-        wait(nmc, 10)
+        wait(nmc, 20)
 
         count = get_access_point_count(device)
 
@@ -156,6 +156,8 @@ def main():
             continue
 
         debug("Scanning did NOT work")
+
+        cleanup(nmc)
 
         debug("Switching to unmanaged...")
 
