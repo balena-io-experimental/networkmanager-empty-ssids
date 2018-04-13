@@ -147,7 +147,7 @@ def main():
 
         request_scan(device)
 
-        wait(nmc, 20)
+        wait(nmc, 60)
 
         count = get_access_point_count(device)
 
