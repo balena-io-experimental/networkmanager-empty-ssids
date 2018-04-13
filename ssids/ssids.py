@@ -134,7 +134,7 @@ def main():
 
         count = get_access_point_count()
 
-        if count > 1:
+        if count > 0:
             continue
         
         debug("No access points available")
@@ -145,7 +145,7 @@ def main():
 
         count = get_access_point_count()
 
-        if count > 1:
+        if count > 0:
             debug("Scanning WORKED!!!")
             continue
 
@@ -163,7 +163,7 @@ def main():
 
         count = get_access_point_count()
 
-        if count > 1:
+        if count > 0:
             debug("Unmanaged/managed WORKED!!!")
             continue
 
@@ -175,7 +175,7 @@ def main():
 
         count = get_access_point_count()
 
-        if count > 1:
+        if count > 0:
             debug("Restarting NetworkManager WORKED!!!")
             continue
 
