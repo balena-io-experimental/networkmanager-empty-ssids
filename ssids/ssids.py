@@ -23,7 +23,9 @@ LOGGER = create_logger()
 def debug(*args):
     LOGGER.debug(" ".join([str(arg) for arg in args]))
 
-def set_nm_log_level(nmc, level):
+def set_nm_log_level(level):
+    nmc = NM.Client.new(None)
+
     debug("Setting NetworkManager log level to", level)    
 
     nmc.set_logging(level, "all")
@@ -47,31 +49,25 @@ def restart_network_manager():
         "/org/freedesktop/systemd1 org.freedesktop.systemd1.Manager.RestartUnit " \
         "string:NetworkManager.service string:replace")
 
-def get_interface():
-    if len(sys.argv) < 2:
-        debug("No interface specified as first argument, defaulting to wlan0")
-        return "wlan0"
-    
-    interface = sys.argv[1]
-    debug("Target interface:", interface)
-    return interface
+def get_device():
+    nmc = NM.Client.new(None)
+    devices = nmc.get_devices()
+    for device in devices:
+        if device.get_device_type() == NM.DeviceType.WIFI:
+            return device
 
-def get_device(nmc, interface):
-    device = nmc.get_device_by_iface(interface)
+    sys.exit("WiFi device not found")
 
-    if device is None:
-        sys.exit("Interface not found: {}".format(interface))
-
-    return device
-
-def get_access_point_count(device):
-    count = len(device.get_access_points())
+def get_access_point_count():
+    count = len(get_device().get_access_points())
 
     debug("Access point count:", count)
 
     return count
 
-def request_scan(device):
+def request_scan():
+    device = get_device()
+
     device.request_scan()
 
     debug("WiFi scan requested")
@@ -82,13 +78,15 @@ def ssid_to_utf8(ap):
         return ""
     return NM.utils_ssid_to_utf8(ap.get_ssid().get_data())
 
-def print_device_info(device):
+def print_device_info():
+    device = get_device()
     debug("Device:", device.get_iface())
     debug("Driver:", device.get_driver())
     debug("Driver version:", device.get_driver_version())
     debug("Firmware version:", device.get_firmware_version())
 
-def print_ap_info(device):
+def print_ap_info():
+    device = get_device()
     active_ap = device.get_active_access_point()
     ssid = None
     if active_ap is not None:
@@ -96,60 +94,56 @@ def print_ap_info(device):
 
     debug("Active AP:", ssid)
 
-def cleanup(nmc):
-    set_nm_log_level(nmc, "info")
+def set_managed(managed):
+    if managed:
+        debug("Switching to managed...")
+    else:
+        debug("Switching to unmanaged...")
+        
+    device = get_device()
+    device.set_managed(managed)
+
+
+def cleanup():
+    set_nm_log_level("info")
     set_wpa_log_level("info")
 
     debug("Exiting...")
 
     sys.exit(0)
 
-def wait(nmc, seconds):
+def wait(seconds):
     debug("Sleeping", seconds, "seconds...")
 
     try:
         time.sleep(seconds)
     except KeyboardInterrupt:
-        cleanup(nmc)
+        cleanup()
 
 
 def main():
-    interface = get_interface()
-
-    nmc = NM.Client.new(None)
-
-    set_nm_log_level(nmc, "trace")
+    set_nm_log_level("trace")
     set_wpa_log_level("msgdump")
 
-    device = get_device(nmc, interface)
-
-    print_device_info(device)
+    print_device_info()
 
     while True:
-        nmc = NM.Client.new(None)
+        wait(10)
 
-        wait(nmc, 10)
+        print_ap_info()
 
-        device = get_device(nmc, interface)
-
-        print_ap_info(device)
-
-        count = get_access_point_count(device)
+        count = get_access_point_count()
 
         if count > 1:
             continue
         
         debug("No access points available")
 
-        wait(nmc, 10)
+        request_scan()
 
-        debug("Still no access points available")
+        wait(10)
 
-        request_scan(device)
-
-        wait(nmc, 60)
-
-        count = get_access_point_count(device)
+        count = get_access_point_count()
 
         if count > 1:
             debug("Scanning WORKED!!!")
@@ -157,21 +151,17 @@ def main():
 
         debug("Scanning did NOT work")
 
-        cleanup(nmc)
+        cleanup()
 
-        debug("Switching to unmanaged...")
+        set_managed(False)
 
-        device.set_managed(False)
+        wait(5)
 
-        wait(nmc, 5)
+        set_managed(True)
 
-        debug("Switching back to managed...")
+        wait(10)
 
-        device.set_managed(True)
-
-        wait(nmc, 10)
-
-        count = get_access_point_count(device)
+        count = get_access_point_count()
 
         if count > 1:
             debug("Unmanaged/managed WORKED!!!")
@@ -183,11 +173,7 @@ def main():
 
         time.sleep(10)
 
-        nmc = NM.Client.new(None)
-
-        device = get_device(nmc, interface)
-
-        count = get_access_point_count(device)
+        count = get_access_point_count()
 
         if count > 1:
             debug("Restarting NetworkManager WORKED!!!")
@@ -195,7 +181,7 @@ def main():
 
         debug("Restarting NetworkManager did NOT work")
 
-        cleanup(nmc)
+        cleanup()
 
 
 if __name__ == "__main__":
