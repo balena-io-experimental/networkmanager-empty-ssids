@@ -6,7 +6,7 @@ import logging
 
 import gi
 gi.require_version("NM", "1.0")
-from gi.repository import NM
+from gi.repository import NM, GLib
 
 FORMATTER = logging.Formatter("%(asctime)s — %(message)s")
 
@@ -68,9 +68,12 @@ def get_access_point_count():
 def request_scan():
     device = get_device()
 
-    device.request_scan()
-
     debug("WiFi scan requested")
+
+    try:
+        device.request_scan()
+    except GLib.Error as e:
+        debug(e.message)
 
 def ssid_to_utf8(ap):
     ssid = ap.get_ssid()
