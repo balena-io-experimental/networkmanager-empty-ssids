@@ -13,5 +13,6 @@ WORKDIR /usr/src/app
 COPY ssids.py .
 
 ENV DBUS_SYSTEM_BUS_ADDRESS unix:path=/host/run/dbus/system_bus_socket
+ENV PYTHONIOENCODING utf-8
 
 CMD ["python3", "ssids.py"]

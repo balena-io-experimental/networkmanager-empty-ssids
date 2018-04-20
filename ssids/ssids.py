@@ -154,8 +154,6 @@ def main():
 
         debug("Scanning did NOT work")
 
-        cleanup()
-
         set_managed(False)
 
         wait(5)
